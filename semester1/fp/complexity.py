@@ -1,0 +1,219 @@
+import random
+import time
+
+def interpolation_search(arr, x):
+    low, high = 0, len(arr) - 1
+    while low <= high and x >= arr[low] and x <= arr[high]:
+        if low == high:
+            return low if arr[low] == x else -1
+        pos = low + ((x - arr[low]) * (high - low) // (arr[high] - arr[low]))
+        if arr[pos] == x:
+            return pos
+        elif arr[pos] < x:
+            low = pos + 1
+        else:
+            high = pos - 1
+    return -1
+
+def is_sorted(arr):
+    return all(arr[i] <= arr[i+1] for i in range(len(arr)-1))
+
+
+def bogo_sort(arr, step):
+    arr = arr[:]
+    operations = 0
+    while not is_sorted(arr):
+        random.shuffle(arr)
+        operations += 1
+        if operations % step == 0:
+            print(f"After {operations} shuffle(s): {arr}")
+    return arr
+
+def heapify(arr, n, i, operations, step):
+    largest = i
+    left = 2 * i + 1
+    right = 2 * i + 2
+    if left < n and arr[left] > arr[largest]:
+        largest = left
+    if right < n and arr[right] > arr[largest]:
+        largest = right
+    if largest != i:
+        arr[i], arr[largest] = arr[largest], arr[i]
+        operations[0] += 1
+        if operations[0] % step == 0:
+            print(f"After {operations[0]} swap(s): {arr}")
+        heapify(arr, n, largest, operations, step)
+
+def heap_sort(arr, step):
+    arr = arr[:]
+    n = len(arr)
+    operations = [0]
+    for i in range(n//2 - 1, -1, -1):
+        heapify(arr, n, i, operations, step)
+    for i in range(n-1, 0, -1):
+        arr[i], arr[0] = arr[0], arr[i]
+        operations[0] += 1
+        if operations[0] % step == 0 or is_sorted(arr):
+            print(f"After {operations[0]} swap(s): {arr}")
+        heapify(arr, i, 0, operations, step)
+    return arr
+
+def bogo_sort_simple(arr):
+    arr = arr[:]
+    while not is_sorted(arr):
+        random.shuffle(arr)
+    return arr
+
+def heap_sort_simple(arr):
+    arr = arr[:]
+    n = len(arr)
+    for i in range(n//2 - 1, -1, -1):
+        heapify(arr, n, i, [0], step=999999)
+    for i in range(n-1, 0, -1):
+        arr[i], arr[0] = arr[0], arr[i]
+        heapify(arr, i, 0, [0], step=999999)
+    return arr
+
+def print_complexity(algorithm):
+    print("\n=== Theoretical Complexity ===")
+    if algorithm == "bogo":
+        print("Bogo Sort:")
+        print("  Best Case: O(1) (already sorted)")
+        print("  Average Case: O((n+1)!)")
+        print("  Worst Case: Unbounded (very impractical)")
+    elif algorithm == "heap":
+        print("Heap Sort:")
+        print("  Best Case: O(n log n)")
+        print("  Average Case: O(n log n)")
+        print("  Worst Case: O(n log n)")
+    elif algorithm == "search":
+        print("Interpolation Search:")
+        print("  Best Case: O(1)")
+        print("  Average Case: O(log log n) (uniform distribution)")
+        print("  Worst Case: O(n)")
+
+def run_complexity_test(case_type, algorithm):
+    if algorithm == "bogo":
+        sizes = [5, 6, 7, 8]  # prevent overflow
+    else:
+        sizes = [500, 1000, 2000, 4000, 8000]
+
+    print_complexity(algorithm)
+    print("\n=== Empirical Runtime Measurements ===")
+
+    for size in sizes:
+        if case_type == "best":
+            arr = list(range(size))
+        elif case_type == "worst":
+            arr = list(range(size, 0, -1))
+        else:
+            arr = [random.randint(0, 1000) for _ in range(size)]
+
+        start_time = time.time()
+        if algorithm == "bogo":
+            bogo_sort_simple(arr)
+        elif algorithm == "heap":
+            heap_sort_simple(arr)
+        elif algorithm == "search":
+            interpolation_search(arr, arr[len(arr)//2])
+        end_time = time.time()
+
+        print(f"{algorithm.capitalize()} | {case_type.capitalize()} Case | Size {size:<5} | Time: {end_time - start_time:.6f} seconds")
+
+def main():
+    arr = []
+    is_list_sorted = False
+
+    while True:
+        print("\n=== MENU ===")
+        print("1. Generate list")
+        print("2. Bogo Sort")
+        print("3. Heap Sort")
+        print("4. Interpolation Search")
+        print("5. Complexity Analysis")
+        print("6. Exit")
+
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            n = int(input("Enter list size: "))
+            arr = [random.randint(0, 1000) for _ in range(n)]
+            print(f"Generated list: {arr}")
+            is_list_sorted = False
+
+        elif choice == "2":
+            if not arr:
+                print("You need to generate a list first.")
+                continue
+            step = int(input("Enter step interval: "))
+            arr = bogo_sort(arr, step)
+            print(f"Final sorted list: {arr}")
+            is_list_sorted = True
+
+        elif choice == "3":
+            if not arr:
+                print("You need to generate a list first.")
+                continue
+            step = int(input("Enter step interval: "))
+            arr = heap_sort(arr, step)
+            print(f"Final sorted list: {arr}")
+            is_list_sorted = True
+
+        elif choice == "4":
+            if not arr:
+                print("You need to generate a list first.")
+                continue
+            if not is_list_sorted:
+                print("You must sort the list before searching.")
+                continue
+            x = int(input("Enter number to search: "))
+            idx = interpolation_search(arr, x)
+            if idx != -1:
+                print(f"Found {x} at index {idx}")
+            else:
+                print(f"{x} not found in the list.")
+
+        elif choice == "5":
+            print("\nSelect Case Type:")
+            print("1. Best Case")
+            print("2. Average Case")
+            print("3. Worst Case")
+            case_choice = input("Enter choice: ")
+
+            if case_choice == "1":
+                case_type = "best"
+            elif case_choice == "2":
+                case_type = "average"
+            elif case_choice == "3":
+                case_type = "worst"
+            else:
+                print("Invalid choice")
+                continue
+
+            print("\nChoose Algorithm:")
+            print("1. Bogo Sort")
+            print("2. Heap Sort")
+            print("3. Interpolation Search")
+            algo_choice = input("Enter choice: ")
+
+            if algo_choice == "1":
+                algorithm = "bogo"
+            elif algo_choice == "2":
+                algorithm = "heap"
+            elif algo_choice == "3":
+                algorithm = "search"
+            else:
+                print("Invalid choice")
+                continue
+
+            run_complexity_test(case_type, algorithm)
+
+        elif choice == "6":
+            print("Exiting program...")
+            break
+
+        else:
+            print("Invalid choice, please try again.")
+
+if __name__ == "__main__":
+    main()
